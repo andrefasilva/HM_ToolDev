@@ -22,17 +22,6 @@ def detectmodel():
         print("Model not found!")
         exit
 
-# Function to calculate angle_between_vectors(u, v):
-def angle_between_vectors(u, v):
-    dot_product = sum(i*j for i, j in zip(u, v))
-    norm_u = math.sqrt(sum(i**2 for i in u))
-    norm_v = math.sqrt(sum(i**2 for i in v))
-    cos_theta = dot_product / (norm_u * norm_v)
-    angle_rad = math.acos(cos_theta)
-    angle_deg = math.degrees(angle_rad)
-    return angle_rad, angle_deg
-
-
 # Runs model detection and requests user to select elements and nodes
 detectmodel()
 elems = hm.CollectionByInteractiveSelection(hm.Model(model),ent.Element,"Select BEAM elements to orient.")
