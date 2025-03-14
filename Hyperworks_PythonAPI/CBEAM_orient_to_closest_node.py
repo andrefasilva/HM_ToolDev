@@ -16,7 +16,7 @@ def detectmodel():
     global model    
     model = hm.Session.get_current_model()    
     if hm.Session.model_exists(model) is True:
-        print("Valid model detected.")        
+        print("Valid Hypermesh model detected.")        
     else:
         print("Model not found!")
         exit
@@ -55,10 +55,10 @@ for element in elems:
 
     # Checks which reference distance is smallest and then uses that as the reference for the alignment node
     if temp1 < temp2:
-        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid1,1)
+        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid1,0)
         print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid1.id))
     else:
-        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid2,1)
+        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid2,0)
         print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid2.id))     
     print("-------------------------")
 print("-------- FINISHED -------")
