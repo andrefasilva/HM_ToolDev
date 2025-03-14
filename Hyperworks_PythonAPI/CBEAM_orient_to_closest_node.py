@@ -9,7 +9,6 @@
 # ----IMPORTS----
 import hm
 import hm.entities as ent
-import math
 import sys
 
 # Verifies if a Hypermesh model is detected
@@ -54,12 +53,12 @@ for element in elems:
     stored1 = 1000.0
     stored2 = stored1
 
-# Checks which reference distance is smallest and then uses that as the reference for the alignment node
+    # Checks which reference distance is smallest and then uses that as the reference for the alignment node
     if temp1 < temp2:
-        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(model),ent.Element,[element]),nodeid1,1)
+        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid1,1)
         print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid1.id))
     else:
-        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(model),ent.Element,[element]),nodeid2,1)
-        print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid2.id))
+        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid2,1)
+        print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid2.id))     
     print("-------------------------")
 print("-------- FINISHED -------")
