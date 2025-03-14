@@ -3,7 +3,7 @@
 ##################################################
 #
 ################ Version history #################
-# v1.0 - First version (Current)
+# v1.0 - First version (Current version)
 #_________________________________________________
 
 # ----IMPORTS----
@@ -42,7 +42,7 @@ print("-------------------------")
 # Checks if all selected elements are CBEAM, otherwise stops the code
 for element in elems:
     if element.typename != "CBEAM":
-        sys.exit('Selected elements contain non CBEAM elements. Aborted...')
+        sys.exit('Selected elements contain non CBEAM elements. Review selection. Aborted...')
         exit
 
 #Initialization of variables    
