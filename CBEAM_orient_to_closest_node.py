@@ -25,13 +25,13 @@ def detectmodel():
 detectmodel()
 elems = hm.CollectionByInteractiveSelection(hm.Model(model),ent.Element,"Select BEAM elements to orient.")
 nodes = hm.CollectionByInteractiveSelection(hm.Model(model),ent.Node,"Select nodes for orientation reference.")
-print(f'Number of selected elems: {len(elems)}' + f' || Number os selected nodes:{len(nodes)}')
+print(f'Number of selected elems: {len(elems)}' + f' || Number of selected nodes:{len(nodes)}')
 print("-------------------------")
 # Checks if all selected elements are CBEAM, otherwise stops the code
 for element in elems:
     if element.typename != "CBEAM":
-        sys.exit('Selected elements contain non CBEAM elements. Review selection. Aborted...')
-        exit
+        print('Selected elements contain non CBEAM elements. Review selection.')
+        sys.exit('Terminated with errors.')
 
 #Initialization of variables    
 stored1 = 1000.0
