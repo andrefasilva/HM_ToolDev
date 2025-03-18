@@ -37,7 +37,6 @@ for element in elems:
 
 #Initialization of variables    
 stored1 = 1000.0
-stored2 = stored1
 
 # Find the distance between node A of CBEAM and finding the closest node from the reference list
 for element in elems:
