@@ -3,7 +3,9 @@
 ##################################################
 #
 ################ Version history #################
-# v1.0 - First version (Current version)
+# v1.0 - First version
+# v2.0 - Calculated distance from node A of CBEAM
+# to closest node (instead of node A and B)
 #_________________________________________________
 
 # ----IMPORTS----
@@ -37,28 +39,18 @@ for element in elems:
 stored1 = 1000.0
 stored2 = stored1
 
-# Find the distance between both nodes of CBEAM and finding the closest node from the reference list
+# Find the distance between node A of CBEAM and finding the closest node from the reference list
 for element in elems:
     for node in nodes:
         distance1 = hm.Model(model).hm_getdistance(ent.Node,element.node1.id,node.id,element.node1.outputsystemid.id)
-        distance2 = hm.Model(model).hm_getdistance(ent.Node,element.node2.id,node.id,element.node2.outputsystemid.id)
         if stored1 > distance1[1].distanceTotal:
             stored1 = distance1[1].distanceTotal
             nodeid1 = node
             temp1 = stored1
-        if stored2 > distance2[1].distanceTotal:
-            stored2 = distance2[1].distanceTotal
-            nodeid2 = node
-            temp2 = stored2
     stored1 = 1000.0
-    stored2 = stored1
 
-    # Checks which reference distance is smallest and then uses that as the reference for the alignment node
-    if temp1 < temp2:
-        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid1,0)
-        print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid1.id))
-    else:
-        hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid2,0)
-        print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid2.id))     
+    # Orients beam based on distance -> node A of CBEAM with closest node
+    hm.Model(model).bardirectionupdate(hm.Collection(hm.Model(),ent.Element,[element.id]),nodeid1,0)
+    print("Successfully oriented element " + str(element.id) + " with respect to node " + str(nodeid1.id))  
     print("-------------------------")
 print("-------- FINISHED -------")
