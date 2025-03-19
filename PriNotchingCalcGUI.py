@@ -3,7 +3,8 @@ from hw.hv import *
 from hwx.xmlui import gui
 from hwx import gui as gui2
 import os
-
+import csv
+dir(gui.OpenFileEntry)
 
 def GUIprimarynotching():
 
@@ -12,10 +13,12 @@ def GUIprimarynotching():
         WClines=[]
         Superlines=[]
         masslines=[]
+        setAlines=[]
         extendedfile=[]
         WCstring = "                                           O U T P U T   F R O M   W E I G H T   C H E C K"
         Super = "SUPERELEMENT 0"
         massstring ="MASS AXIS SYSTEM (S)"
+        noSE = "DEGREES OF FREEDOM SET = A"
         file = open("%s" % filepath,"r")
 
         # Finds the lines which have the output from WC and line of Superelement 0
@@ -27,12 +30,24 @@ def GUIprimarynotching():
                 Superlines.append(lineid)
             if massstring in line:
                 masslines.append(lineid)
+            if noSE in line:
+                setAlines.append(lineid)
+        
         for WCid in  WClines:
-            for superid in Superlines:
-             for massline in masslines:
-                    if (WCid-superid == 2) and (massline-WCid == 15):
-                        Xaxis = extendedfile[WCid+16].split()
-                        Yaxis = extendedfile[WCid+17].split()
+            # Checks if superelements are detected
+            if Superlines != []:
+                for superid in Superlines:
+                    for massline in masslines:
+                        if (WCid-superid == 2) and (massline-WCid == 15):
+                            Xaxis = extendedfile[WCid+16].split()
+                            Yaxis = extendedfile[WCid+17].split()
+        # Else, in case no superelements are included
+        else:
+            for setA in setAlines:
+                for massline in masslines:
+                    if (setA-WCid == 1) and (massline-WCid == 23):
+                        Xaxis = extendedfile[WCid+24].split()
+                        Yaxis = extendedfile[WCid+25].split()
         mass = Xaxis[1]
         xcog = Yaxis[2]
         ycog = Xaxis[3]
@@ -48,21 +63,23 @@ def GUIprimarynotching():
             #Axial direction as X
         if axdir == "lvl1":
             RX = 0
-            RY = float(mass)*float(levelz)*float(xcog)*9.81
-            RZ = float(mass)*float(levely)*float(xcog)*9.81
+            RY = round(float(mass)*float(levelz)*float(xcog)*9.81,2)
+            RZ = round(float(mass)*float(levely)*float(xcog)*9.81,2)
 
         #Axial direction as Y
         elif axdir == "lvl2":
-            RX = float(mass)*float(levelz)*float(ycog)*9.81
+            RX = round(float(mass)*float(levelz)*float(ycog)*9.81,2)
             RY = 0
-            RZ = float(mass)*float(levelx)*float(ycog)*9.81
+            RZ = round(float(mass)*float(levelx)*float(ycog)*9.81,2)
 
         #Axial direction as Z
         elif axdir == "lvl3":
-            RX = float(mass)*float(levely)*float(zcog)*9.81
-            RY = float(mass)*float(levelx)*float(zcog)*9.81
+            RX = round(float(mass)*float(levely)*float(zcog)*9.81,2)
+            RY = round(float(mass)*float(levelx)*float(zcog)*9.81,2)
             RZ = 0
-
+        TX = round(TX,2)
+        TY = round(TY,2)
+        TZ = round(TZ,2)
 
     def onClose(event):
         dialog.Hide()
@@ -71,8 +88,17 @@ def GUIprimarynotching():
         dialog.Hide()
         openf06(f06file.value)
         calculatenotch(mass,xcog,ycog,zcog,levelx.value,levely.value,levelz.value,combobox.value)
-        print("Primary notching summary: \n" + "FX: " + str(TX) + " N\n" + "FY: " + str(TY) + " N\n" + "FZ: " + str(TZ) + " N\n",
-        "MX: "+ str(RX) + " N.m\n" + "MY: "+ str(RY) + " N.m\n" + "MZ: "+ str(RZ) + " N.m\n")
+        # print results in HM python window
+        print(" Primary notching summary: \n" + " FX: " + str(TX) + " N\n" + " FY: " + str(TY) + " N\n" + " FZ: " + str(TZ) + " N\n",
+        "MX: "+ str(RX) + " N.m\n" + " MY: "+ str(RY) + " N.m\n" + " MZ: "+ str(RZ) + " N.m\n")
+        # Save results to csv
+        with open(str(csvfile.value), "w", newline="") as f:
+        # creating the writer
+            writer = csv.writer(f)
+        # using writerow to write individual record one by one
+            writer.writerow(["FX", "FY", "FZ", "MX", "MY", "MZ"])
+            writer.writerow([TX, TY, TZ, RX, RY, RZ])
+
 
     def comboboxFunc(event):
         direction = event.value
@@ -80,7 +106,11 @@ def GUIprimarynotching():
 
     # Entry to specify the f06 file path
     f06label = gui.Label(text="Load *.f06 file")
-    f06file = gui.OpenFileEntry(placeholdertext="Browse files...")
+    f06file = gui.OpenFileEntry(placeholdertext="Browse f06 file", filetypes="*.f06")
+    
+    # CSV path 
+    csvlabel = gui.Label(text="*.csv file save")
+    csvfile = gui.SaveFileEntry(placeholdertext="csv file save path", filetypes="*.csv")
 
     # Line entries for user data input of QS levels
     labelX = gui.Label(text="QS - X")
@@ -99,6 +129,7 @@ def GUIprimarynotching():
 
     mainFrame = gui.VFrame(
         (f06label, 10, f06file),
+        (csvlabel, 10, csvfile),
         (labelX, 10, levelx, 30, labelY, 10, levely, 30, labelZ, 10, levelz),
         (Directionlabel, 10, combobox, "<->"),
         (create, close),
