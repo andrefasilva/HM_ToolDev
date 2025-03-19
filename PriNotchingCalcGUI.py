@@ -59,9 +59,9 @@ def GUIprimarynotching():
         TX = round(float(mass)*float(levelx)*9.81,2)
         TY = round(float(mass)*float(levely)*9.81,2)
         TZ = round(float(mass)*float(levelz)*9.81,2) 
-        RX = round((TZ*float(ycog)*9.81)+(TY*float(zcog)*9.81),2)
-        RY = round((TZ*float(xcog)*9.81)+(TX*float(zcog)*9.81),2)
-        RZ = round((TY*float(xcog)*9.81)+(TX*float(ycog)*9.81),2)
+        RX = round((TZ*float(ycog))+(TY*float(zcog)),2)
+        RY = round((TZ*float(xcog))+(TX*float(zcog)),2)
+        RZ = round((TY*float(xcog))+(TX*float(ycog)),2)
 
     def loadcomb(csvinput):
         global permutations
