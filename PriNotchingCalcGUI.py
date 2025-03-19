@@ -1,6 +1,6 @@
 from hw import *
 from hw.hv import *
-from hwx.xmlui import gui
+from hwx.xmlui import gui # type: ignore
 from hwx import gui as gui2
 import os
 import csv
