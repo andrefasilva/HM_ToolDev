@@ -5,7 +5,6 @@ from hwx import gui as gui2
 import os
 import csv
 
-
 def GUIprimarynotching():
 
     def openf06(filepath):
@@ -101,8 +100,13 @@ def GUIprimarynotching():
         # creating the writer
             writer = csv.writer(f)
             writer.writerow(["X-level","Y-level","Z-level","FX", "FY", "FZ", "MX", "MY", "MZ"])
-            
             combin = []
+            storeTX = 0
+            storeTY = storeTX
+            storeTZ = storeTX
+            storeRX = storeTX
+            storeRY = storeTX
+            storeRZ = storeTX
             for permid in permutations:
                 for combin in permid:
                     levelx = combin[0]
@@ -111,6 +115,26 @@ def GUIprimarynotching():
                     calculatenotch(mass,xcog,ycog,zcog,levelx,levely,levelz)
                     # using writerow to write individual record one by one
                     writer.writerow([levelx,levely,levelz, TX, TY, TZ, RX, RY, RZ])
+                    if abs(TX) > abs(storeTX):
+                        storeTX = TX
+                    if abs(TY) > abs(storeTY):
+                        storeTY = TY
+                    if abs(TZ) > abs(storeTZ):
+                        storeTZ = TZ
+                    if abs(RX) > abs(storeRX):
+                        storeRX = RX
+                    if abs(RY) > abs(storeRY):
+                        storeRY = RY
+                    if abs(RZ) > abs(storeRZ):
+                        storeRZ = RZ
+
+        
+        # Save results to csv
+        with open(str(csvfile.value[:-4]+"_limits.csv"), "w", newline="") as f2:
+        # creating the writer
+            writer2 = csv.writer(f2)
+            writer2.writerow(["FX", "FY", "FZ", "MX", "MY", "MZ"])
+            writer2.writerow([abs(storeTX), abs(storeTY), abs(storeTZ), abs(storeRX), abs(storeRY), abs(storeRZ)])
         gui2.tellUser("Done!")
 
 
@@ -120,15 +144,15 @@ def GUIprimarynotching():
 
     # CSV with input loads 
     inputlabel = gui.Label(text="*.csv file with input loads")
-    inputfile = gui.OpenFileEntry(placeholdertext="csv file load path", filetypes="*.csv")
+    inputfile = gui.OpenFileEntry(placeholdertext="csv file load path", filetypes="*.csv", title = "Select the input levels csv file")
 
     # Entry to specify the f06 file path
     f06label = gui.Label(text="Load *.f06 file")
-    f06file = gui.OpenFileEntry(placeholdertext="Browse f06 file", filetypes="*.f06")
+    f06file = gui.OpenFileEntry(placeholdertext="Browse f06 file", filetypes="*.f06", title = "Select the f06 file with weightcheck data")
     
     # CSV path 
     csvlabel = gui.Label(text="*.csv file save")
-    csvfile = gui.SaveFileEntry(placeholdertext="csv file save path", filetypes="*.csv")
+    csvfile = gui.SaveFileEntry(placeholdertext="csv file save path", filetypes="*.csv", title = "Select the desired output csv file path")
 
     # Buttons for running or closing dialog
     close = gui.Button("Close", command=onClose)
