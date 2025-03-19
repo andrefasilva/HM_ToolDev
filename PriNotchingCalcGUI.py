@@ -4,7 +4,7 @@ from hwx.xmlui import gui
 from hwx import gui as gui2
 import os
 import csv
-dir(gui.OpenFileEntry)
+
 
 def GUIprimarynotching():
 
@@ -54,50 +54,73 @@ def GUIprimarynotching():
         zcog = Xaxis[4]
         return mass, xcog, ycog, zcog
 
-
-    def calculatenotch(mass,xcog,ycog,zcog,levelx,levely,levelz,axdir):
+    def calculatenotch(mass,xcog,ycog,zcog,levelx,levely,levelz):
         global TX, TY, TZ, RX, RY, RZ
         TX = round(float(mass)*float(levelx)*9.81,2)
         TY = round(float(mass)*float(levely)*9.81,2)
-        TZ = round(float(mass)*float(levelz)*9.81,2)
-            #Axial direction as X
-        if axdir == "lvl1":
-            RX = 0
-            RY = round((TZ*float(xcog)*9.81)+(TX*float(zcog)*9.81),2)
-            RZ = round((TY*float(xcog)*9.81)+(TX*float(ycog)*9.81),2)
+        TZ = round(float(mass)*float(levelz)*9.81,2) 
+        RX = round((TZ*float(ycog)*9.81)+(TY*float(zcog)*9.81),2)
+        RY = round((TZ*float(xcog)*9.81)+(TX*float(zcog)*9.81),2)
+        RZ = round((TY*float(xcog)*9.81)+(TX*float(ycog)*9.81),2)
 
-        #Axial direction as Y
-        elif axdir == "lvl2":
-            RX = round((TZ*float(ycog)*9.81)+(TY*float(zcog)*9.81),2)
-            RY = 0
-            RZ = round((TX*float(ycog)*9.81)+(TY*float(xcog)*9.81),2)
+    def loadcomb(csvinput):
+        global permutations
+        inputlvl = []
+        with open(csvinput, newline='') as csvinfile:
+            inputlevels = csv.reader(csvinfile, delimiter=' ', quotechar='|')
+            for row in inputlevels:
+                inputlvl.append(row)
 
-        #Axial direction as Z
-        elif axdir == "lvl3":
-            RX = round((TY*float(zcog)*9.81)+(TZ*float(ycog)*9.81),2)
-            RY = round((TX*float(zcog)*9.81)+(TZ*float(xcog)*9.81),2)
-            RZ = 0
+        combinations = []
+        permutations = []
+        for eachrow in inputlvl[1:]:
+            combinations.append(tuple(eachrow))
 
+        for comb in combinations:
+            comb = comb[0].split(",")
+            Xlvl=round(float(comb[0]),2)
+            Ylvl=round(float(comb[1]),2)
+            Zlvl=round(float(comb[2]),2)
+            variations = (
+            [Xlvl,Ylvl,Zlvl],[Xlvl,Ylvl*(-1),Zlvl],[Xlvl,Ylvl*(-1),Zlvl*(-1)],
+            [Xlvl*(-1),Ylvl,Zlvl],[Xlvl*(-1),Ylvl*(-1),Zlvl],[Xlvl*(-1),Ylvl*(-1),Zlvl*(-1)],
+            [Xlvl,Ylvl,Zlvl*(-1)],[Xlvl*(-1),Ylvl,Zlvl*(-1)]            
+            )   
+            permutations.append(variations)
+   
     def onClose(event):
         dialog.Hide()
 
     def onRun(event):
         dialog.Hide()
         openf06(f06file.value)
-        calculatenotch(mass,xcog,ycog,zcog,levelx.value,levely.value,levelz.value,combobox.value)
+        loadcomb(inputfile.value)
 
         # Save results to csv
         with open(str(csvfile.value), "w", newline="") as f:
         # creating the writer
             writer = csv.writer(f)
-        # using writerow to write individual record one by one
-            writer.writerow(["FX", "FY", "FZ", "MX", "MY", "MZ"])
-            writer.writerow([TX, TY, TZ, RX, RY, RZ])
+            writer.writerow(["X-level","Y-level","Z-level","FX", "FY", "FZ", "MX", "MY", "MZ"])
+            
+            combin = []
+            for permid in permutations:
+                for combin in permid:
+                    levelx = combin[0]
+                    levely = combin[1]
+                    levelz = combin[2]                    
+                    calculatenotch(mass,xcog,ycog,zcog,levelx,levely,levelz)
+                    # using writerow to write individual record one by one
+                    writer.writerow([levelx,levely,levelz, TX, TY, TZ, RX, RY, RZ])
+        gui2.tellUser("Done!")
 
 
     def comboboxFunc(event):
         direction = event.value
         pass
+
+    # CSV with input loads 
+    inputlabel = gui.Label(text="*.csv file with input loads")
+    inputfile = gui.OpenFileEntry(placeholdertext="csv file load path", filetypes="*.csv")
 
     # Entry to specify the f06 file path
     f06label = gui.Label(text="Load *.f06 file")
@@ -107,26 +130,15 @@ def GUIprimarynotching():
     csvlabel = gui.Label(text="*.csv file save")
     csvfile = gui.SaveFileEntry(placeholdertext="csv file save path", filetypes="*.csv")
 
-    # Line entries for user data input of QS levels
-    labelX = gui.Label(text="QS - X")
-    levelx = gui.LineEdit(placeholdertext = "g")
-    labelY = gui.Label(text="QS - Y")
-    levely = gui.LineEdit(placeholdertext = "g")
-    labelZ = gui.Label(text="QS - Z")
-    levelz = gui.LineEdit(placeholdertext = "g")
-    Directionlabel = gui.Label(text="Axial direction")
-    levels = (("lvl1", "X"), ("lvl2", "Y"), ("lvl3", "Z"))
-    combobox = gui2.ComboBox(levels, command=comboboxFunc)
-
     # Buttons for running or closing dialog
     close = gui.Button("Close", command=onClose)
     create = gui.Button("Run", command=onRun)
 
     mainFrame = gui.VFrame(
+        (inputlabel, 10, inputfile),
         (f06label, 10, f06file),
         (csvlabel, 10, csvfile),
-        (labelX, 10, levelx, 30, labelY, 10, levely, 30, labelZ, 10, levelz),
-        (Directionlabel, 10, combobox, "<->"),
+        ("<->"),
         (create, close),
     )
 
@@ -134,6 +146,6 @@ def GUIprimarynotching():
     dialog.recess().add(mainFrame)
     dialog.setButtonVisibile("ok", False)
     dialog.setButtonVisibile("cancel", False)
-    dialog.show(width=400, height=200)
+    dialog.show(width=450, height=170)
 
 GUIprimarynotching()
