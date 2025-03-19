@@ -5,7 +5,6 @@ from hwx import gui as gui2
 import os
 import csv
 
-
 def GUIprimarynotching():
 
     def openf06(filepath):
