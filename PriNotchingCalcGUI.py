@@ -57,29 +57,26 @@ def GUIprimarynotching():
 
     def calculatenotch(mass,xcog,ycog,zcog,levelx,levely,levelz,axdir):
         global TX, TY, TZ, RX, RY, RZ
-        TX = float(mass)*float(levelx)*9.81
-        TY = float(mass)*float(levely)*9.81
-        TZ = float(mass)*float(levelz)*9.81
+        TX = round(float(mass)*float(levelx)*9.81,2)
+        TY = round(float(mass)*float(levely)*9.81,2)
+        TZ = round(float(mass)*float(levelz)*9.81,2)
             #Axial direction as X
         if axdir == "lvl1":
             RX = 0
-            RY = round(float(mass)*float(levelz)*float(xcog)*9.81,2)
-            RZ = round(float(mass)*float(levely)*float(xcog)*9.81,2)
+            RY = round((TZ*float(xcog)*9.81)+(TX*float(zcog)*9.81),2)
+            RZ = round((TY*float(xcog)*9.81)+(TX*float(ycog)*9.81),2)
 
         #Axial direction as Y
         elif axdir == "lvl2":
-            RX = round(float(mass)*float(levelz)*float(ycog)*9.81,2)
+            RX = round((TZ*float(ycog)*9.81)+(TY*float(zcog)*9.81),2)
             RY = 0
-            RZ = round(float(mass)*float(levelx)*float(ycog)*9.81,2)
+            RZ = round((TX*float(ycog)*9.81)+(TY*float(xcog)*9.81),2)
 
         #Axial direction as Z
         elif axdir == "lvl3":
-            RX = round(float(mass)*float(levely)*float(zcog)*9.81,2)
-            RY = round(float(mass)*float(levelx)*float(zcog)*9.81,2)
+            RX = round((TY*float(zcog)*9.81)+(TZ*float(ycog)*9.81),2)
+            RY = round((TX*float(zcog)*9.81)+(TZ*float(xcog)*9.81),2)
             RZ = 0
-        TX = round(TX,2)
-        TY = round(TY,2)
-        TZ = round(TZ,2)
 
     def onClose(event):
         dialog.Hide()
@@ -88,9 +85,7 @@ def GUIprimarynotching():
         dialog.Hide()
         openf06(f06file.value)
         calculatenotch(mass,xcog,ycog,zcog,levelx.value,levely.value,levelz.value,combobox.value)
-        # print results in HM python window
-        print(" Primary notching summary: \n" + " FX: " + str(TX) + " N\n" + " FY: " + str(TY) + " N\n" + " FZ: " + str(TZ) + " N\n",
-        "MX: "+ str(RX) + " N.m\n" + " MY: "+ str(RY) + " N.m\n" + " MZ: "+ str(RZ) + " N.m\n")
+
         # Save results to csv
         with open(str(csvfile.value), "w", newline="") as f:
         # creating the writer
