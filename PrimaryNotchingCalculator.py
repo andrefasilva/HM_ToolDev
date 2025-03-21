@@ -220,12 +220,11 @@ def h5_notchdata(h5file,randomspec):
                     SPCFcplx[MaskSPCD,4],SPCFcplx[MaskSPCD,5],SPCFcplx[MaskSPCD,6]), axis=0)
         
         # Interpolation of the random spec to "match" the analysis freq range
-        from metpy.interpolate import log_interpolate_1d
-        randomcurve = log_interpolate_1d(SPCDaccel[0],randomspec[:,0],randomspec[:,1], fill_value=1.0)
+        randomcurve = np.interp(SPCDaccel[0],randomspec[:,0],randomspec[:,1])
 
         
         fig, axs = plt.subplots(2, 3)
-        #axs[0, 0].plot(SPCDaccel[0], abs(SPCDaccel[2]))
+        axs[0, 0].plot(SPCDaccel[0], abs(SPCDaccel[2]))
         axs[0, 0].plot(SPCDaccel[0], randomcurve)
         axs[0, 0].plot(randomspec[:,0], randomspec[:,1])
         axs[0, 0].set_title("SPC Force TX")
