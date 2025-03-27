@@ -34,11 +34,13 @@ def PrimaryNotchingCalculator(filemanager):
     if inputrandom != "":
         # Gets the random loads into an array
         getrandomlevels(inputrandom)
-        h5_notchrandom(inputh5,randomspec)
+        h5_notchrandom(inputh5x,randomspec)
     elif inputsine !="":   
         # Notches the responses and plots each notched profile - Sine
         getsinelevels(inputsine)
-        h5_notchsine(inputh5, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ)
+        h5_notchsine(inputh5x, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "X")
+        h5_notchsine(inputh5y, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Y")
+        h5_notchsine(inputh5z, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Z")
     else:
         import sys
         sys.exit("No file specified with inputs for Random or Sine.")
@@ -57,25 +59,27 @@ def loadallpaths(pathcsv):
     import pandas as pd
 
     # Set variables as global
-    global inputf06, inputh5, outpath, inputlevels, inputrandom, inputsine, analysis      
+    global inputf06, inputh5x, inputh5y, inputh5z, outpath, inputlevels, inputrandom, inputsine, analysis      
         
     excelbook = pd.read_excel(pathcsv, usecols="B", keep_default_na= False)
     allfileslist = excelbook['File paths'].tolist()
     # Get input file paths
     inputf06 = allfileslist[0]
-    inputh5 = allfileslist[1]
-    inputlevels = allfileslist[2]
-    inputsine = allfileslist[3]
-    inputrandom = allfileslist[4]
+    inputh5x = allfileslist[1]
+    inputh5y = allfileslist[2]
+    inputh5z = allfileslist[3]
+    inputlevels = allfileslist[4]
+    inputsine = allfileslist[5]
+    inputrandom = allfileslist[6]
 
     # Get output file paths
-    outpath = allfileslist[5]
+    outpath = allfileslist[7]
 
     if inputrandom == "":
         analysis = "sine"
     else:
         analysis = "random"
-    return inputf06, inputh5, outpath, inputlevels, inputrandom, inputsine, analysis 
+    return inputf06, inputh5x, inputh5y, inputh5z, outpath, inputlevels, inputrandom, inputsine, analysis 
 
 # Function to read the f06 file and extract the mass and COG
 def openf06(filepath):
@@ -259,7 +263,7 @@ def h5_notchrandom(h5file,randomspec):
         plt.show()
 
 # Function to read the h5 file data and process the SPCD forces wrt. notch limits
-def h5_notchsine(h5file,inputsine, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ):
+def h5_notchsine(h5file,inputsine, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ, CoGX, CoGY, CoGZ, subcase: str):
     import h5py
     import numpy as np
     import matplotlib.pyplot as plt    
@@ -284,95 +288,87 @@ def h5_notchsine(h5file,inputsine, storeTX, storeTY, storeTZ, storeRX, storeRY, 
 
         
         SPCDloads = np.stack((Eigendata[MaskEigen,1],SPCFcplx[MaskSPCD,0],SPCFcplx[MaskSPCD,1],SPCFcplx[MaskSPCD,2],SPCFcplx[MaskSPCD,3],
-                    SPCFcplx[MaskSPCD,4],SPCFcplx[MaskSPCD,5],SPCFcplx[MaskSPCD,6]), axis=0)
-        
-        # Sine profiles and notch limits arranged per frequency value
-        sineXcurve = np.stack((SPCDloads[0],np.interp(SPCDloads[0],inputsine[:,0],inputsine[:,1])), axis=0)
-        sineYcurve = np.stack((SPCDloads[0],np.interp(SPCDloads[0],inputsine[:,2],inputsine[:,3])), axis=0)
-        sineZcurve = np.stack((SPCDloads[0],np.interp(SPCDloads[0],inputsine[:,4],inputsine[:,5])), axis=0)
-
-        limitFX = np.stack((SPCDloads[0],np.full((len(SPCDloads[0])),abs(storeTX))), axis=0)
-        limitFY = np.stack((SPCDloads[0],np.full((len(SPCDloads[0])),abs(storeTY))), axis=0)
-        limitFZ = np.stack((SPCDloads[0],np.full((len(SPCDloads[0])),abs(storeTZ))), axis=0)
-        limitRX = np.stack((SPCDloads[0],np.full((len(SPCDloads[0])),abs(storeRX))), axis=0)
-        limitRY = np.stack((SPCDloads[0],np.full((len(SPCDloads[0])),abs(storeRY))), axis=0)
-        limitRZ = np.stack((SPCDloads[0],np.full((len(SPCDloads[0])),abs(storeRZ))), axis=0)
-
-
-        ratioFX = np.absolute(limitFX[1]/(SPCDloads[2]*sineXcurve[1]*9.81))
-        ratioFY = np.absolute(limitFY[1]/(SPCDloads[3]*sineXcurve[1]*9.81))
-        ratioFZ = np.absolute(limitFZ[1]/(SPCDloads[4]*sineXcurve[1]*9.81))
-        ratioRX = np.absolute(limitRX[1]/(SPCDloads[5]*sineXcurve[1]*9.81))
-        ratioRY = np.absolute(limitRY[1]/(SPCDloads[6]*sineXcurve[1]*9.81))
-        ratioRZ = np.absolute(limitRZ[1]/(SPCDloads[7]*sineXcurve[1]*9.81))
-        
-        
-        ratioFX[ratioFX > 1] = 1
-        ratioFY[ratioFY > 1] = 1
-        ratioFZ[ratioFZ > 1] = 1
-        ratioRX[ratioRX > 1] = 1
-        ratioRY[ratioRY > 1] = 1
-        ratioRZ[ratioRZ > 1] = 1
-        enveloperatio = (np.stack((ratioFX,ratioFY,ratioFZ,ratioRX,ratioRY,ratioRZ), axis = 0).T).min(1)
-
-        notchedX = enveloperatio*sineXcurve[1]  
-
+                    SPCFcplx[MaskSPCD,4],SPCFcplx[MaskSPCD,5],SPCFcplx[MaskSPCD,6]), axis=0)      
 
         
+        # Calculates the sine limits along the frequency range
+        calcsinelimits(SPCDloads[0], storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ)
+
+        # Gets linear interpolated sine spec curve for each subcase
+        lininterpsinespec(SPCDloads[0],inputsine,subcase)
+
+        # Calculate sine notch ratios and retrieves the ratios and envelope
+        sinenotchratios(limitFX,limitFY,limitFZ,limitRX,limitRY,limitRZ,SPCDloads,sinecurve, CoGX, CoGY, CoGZ)
+
+        # Gets notched profile by multiplying the notch ratios by the sine curve
+        notchedprofile = enveloperation*sinecurve[1]
+        # Save notched profile as csv
+        csvwrite2darray(h5file,SPCDloads[0],notchedprofile,"Freq [Hz]", "Sine X [g]")          
+        
+        # PLOTING CURVES
         fig, axs = plt.subplots(3, 3)        
-        axs[0, 0].set_title("Sine X Notch profiles")        
-        axs[0, 0].plot(SPCDloads[0], sineXcurve[1], label = "Input Profile")
-        axs[0, 0].plot(SPCDloads[0], notchedX, label = "Notched Profile")
+        axs[0, 0].set_title("Sine "+ subcase + " Notch profile")        
+        axs[0, 0].plot(SPCDloads[0], sinecurve[1], "k--", label = "Input Profile", linewidth=2)
+        axs[0, 0].plot(SPCDloads[0], notchedprofile, label = "Notched Profile")
         axs[0, 0].legend(fontsize="7")
         
-        axs[0, 1].set_title("Sine X Notch ratios")        
-        axs[0, 1].plot(SPCDloads[0], enveloperatio, 'tab:orange', label = "Envelope ratios")
+        axs[0, 1].set_title("Sine "+ subcase + " Notch ratios")        
+        axs[0, 1].plot(SPCDloads[0], enveloperation, 'k:', label = "Envelope ratios", linewidth=2)
         axs[0, 1].plot(SPCDloads[0], ratioFX, label = "Ratio FX")
         axs[0, 1].plot(SPCDloads[0], ratioFY, label = "Ratio FY")
         axs[0, 1].plot(SPCDloads[0], ratioFZ, label = "Ratio FZ")
-        axs[0, 1].plot(SPCDloads[0], ratioRX, label = "Ratio MX")
-        axs[0, 1].plot(SPCDloads[0], ratioRY, label = "Ratio MY")
-        axs[0, 1].plot(SPCDloads[0], ratioRZ, label = "Ratio MZ")
+        if axialdirection != "X": 
+            axs[0, 1].plot(SPCDloads[0], ratioRX, label = "Ratio MX")
+        if axialdirection != "Y":
+            axs[0, 1].plot(SPCDloads[0], ratioRY, label = "Ratio MY")
+        if axialdirection != "Z":
+            axs[0, 1].plot(SPCDloads[0], ratioRZ, label = "Ratio MZ")
         axs[0, 1].legend(fontsize="7")
 
         axs[0, 2].set_title("Notched FX")        
-        axs[0, 2].plot(limitFX[0], limitFX[1], 'tab:orange', label = "Limit FX")
-        axs[0, 2].plot(SPCDloads[0], np.absolute(notchedX*SPCDloads[2]*9.81), label = "SPC - Fx")     
+        axs[0, 2].plot(limitFX[0], limitFX[1], 'r', label = "Limit FX")
+        axs[0, 2].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[2]*9.81), label = "Notched FX", linewidth=2)
+        axs[0, 2].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[2]*9.81),  'g--', label = "Unnotched FX")     
         axs[0, 2].legend(fontsize="7")
 
         axs[1, 0].set_title("Notched FY")        
-        axs[1, 0].plot(limitFY[0], limitFY[1], 'tab:orange', label = "Limit FY")
-        axs[1, 0].plot(SPCDloads[0], np.absolute(notchedX*SPCDloads[3]*9.81), label = "SPC - FY")     
+        axs[1, 0].plot(limitFY[0], limitFY[1], 'r', label = "Limit FY")
+        axs[1, 0].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[3]*9.81), label = "Notched FY", linewidth=2)
+        axs[1, 0].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[3]*9.81),  'g--', label = "Unnotched FY")       
         axs[1, 0].legend(fontsize="7")
 
         axs[1, 1].set_title("Notched FZ")        
-        axs[1, 1].plot(limitFZ[0], limitFZ[1], 'tab:orange', label = "Limit FZ")
-        axs[1, 1].plot(SPCDloads[0], np.absolute(notchedX*SPCDloads[4]*9.81), label = "SPC - FZ")     
+        axs[1, 1].plot(limitFZ[0], limitFZ[1], 'r', label = "Limit FZ")
+        axs[1, 1].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[4]*9.81), label = "Notched FZ", linewidth=2)
+        axs[1, 1].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[4]*9.81),  'g--', label = "Unnotched FZ")        
         axs[1, 1].legend(fontsize="7")
 
         axs[1, 2].set_title("Notched MX")        
-        axs[1, 2].plot(limitRX[0], limitRX[1], 'tab:orange', label = "Limit MX")
-        axs[1, 2].plot(SPCDloads[0], np.absolute(notchedX*SPCDloads[5]*9.81), label = "SPC - MX")     
+        axs[1, 2].plot(limitRX[0], limitRX[1], 'r', label = "Limit MX")
+        axs[1, 2].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[5]*9.81), label = "Notched MX", linewidth=2)
+        axs[1, 2].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[5]*9.81),  'g--', label = "Unnotched MX")        
         axs[1, 2].legend(fontsize="7")
 
         axs[2, 0].set_title("Notched MY")        
-        axs[2, 0].plot(limitRY[0], limitRY[1], 'tab:orange', label = "Limit MY")
-        axs[2, 0].plot(SPCDloads[0], np.absolute(notchedX*SPCDloads[6]*9.81), label = "SPC - MY")     
+        axs[2, 0].plot(limitRY[0], limitRY[1], 'r', label = "Limit MY")
+        axs[2, 0].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[6]*9.81), label = "Notched MY", linewidth=2)
+        axs[2, 0].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[6]*9.81),  'g--', label = "Unnotched MY")      
         axs[2, 0].legend(fontsize="7")
 
-        axs[2, 1].set_title("Notched MZ")        
-        axs[2, 1].plot(limitRZ[0], limitRZ[1], 'tab:orange', label = "Limit MZ")
-        axs[2, 1].plot(SPCDloads[0], np.absolute(notchedX*SPCDloads[7]*9.81), label = "SPC - MZ")     
+        axs[2, 1].set_title("Notched MZ")       
+        axs[2, 1].plot(limitRZ[0], limitRZ[1], 'r', label = "Limit MZ")
+        axs[2, 1].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[7]*9.81), label = "Notched MZ", linewidth=2)
+        axs[2, 1].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[7]*9.81),  'g--', label = "Unnotched MZ")      
         axs[2, 1].legend(fontsize="7")
-
-
 
 
 
         for ax in fig.get_axes():
             ax.set_xscale("linear")
-            ax.set_yscale("linear")   
-        plt.show()
+            ax.set_yscale("linear")
+        fig.set_size_inches(20,11)   
+        plt.show()        
+        fig.savefig(h5file[:-3] + "_nochedprofile.png")
 
 # Read the random input levels
 def getrandomlevels(filerandom):
@@ -399,6 +395,76 @@ def getsinelevels(filesine):
     LevelsY = (pd.read_csv(filesine, usecols=[3], keep_default_na= False).to_numpy().T)[0]
     LevelsZ = (pd.read_csv(filesine, usecols=[5], keep_default_na= False).to_numpy().T)[0]
     sinespec = np.vstack([FreqX,LevelsX,FreqY,LevelsY,FreqZ,LevelsZ]).T
+
+# Converts the notch limits to limits over the freq range
+def calcsinelimits(freq,FX,FY,FZ,MX,MY,MZ):
+    import numpy as np
+    global limitFX,limitFY,limitFZ,limitRX,limitRY,limitRZ
+    limitFX = np.stack((freq,np.full((len(freq)),abs(FX))), axis=0)
+    limitFY = np.stack((freq,np.full((len(freq)),abs(FY))), axis=0)
+    limitFZ = np.stack((freq,np.full((len(freq)),abs(FZ))), axis=0)
+    limitRX = np.stack((freq,np.full((len(freq)),abs(MX))), axis=0)
+    limitRY = np.stack((freq,np.full((len(freq)),abs(MY))), axis=0)
+    limitRZ = np.stack((freq,np.full((len(freq)),abs(MZ))), axis=0)
+
+# Calculates the notch ratios for sine (limit/SPCFload)
+def sinenotchratios(limFX,limFY,limFZ,limRX,limRY,limRZ,h5results,sinecurve,X,Y,Z):
+    import numpy as np
+    global ratioFX,ratioFY,ratioFZ,ratioRX,ratioRY,ratioRZ, enveloperation
+    ratioFX = np.absolute(limFX[1]/(h5results[2]*sinecurve[1]*9.81))
+    ratioFY = np.absolute(limFY[1]/(h5results[3]*sinecurve[1]*9.81))
+    ratioFZ = np.absolute(limFZ[1]/(h5results[4]*sinecurve[1]*9.81))
+    ratioRX = np.absolute(limRX[1]/(h5results[5]*sinecurve[1]*9.81))
+    ratioRY = np.absolute(limRY[1]/(h5results[6]*sinecurve[1]*9.81))
+    ratioRZ = np.absolute(limRZ[1]/(h5results[7]*sinecurve[1]*9.81))
+    detectaxial(X,Y,Z)
+    ratioFX[ratioFX > 1] = 1
+    ratioFY[ratioFY > 1] = 1
+    ratioFZ[ratioFZ > 1] = 1
+    ratioRX[ratioRX > 1] = 1
+    ratioRY[ratioRY > 1] = 1
+    ratioRZ[ratioRZ > 1] = 1
+    if axialdirection == "X":
+        enveloperation = (np.stack((ratioFX,ratioFY,ratioFZ,ratioRY,ratioRZ), axis = 0).T).min(1)
+    elif axialdirection =="Y":
+        enveloperation = (np.stack((ratioFX,ratioFY,ratioFZ,ratioRX,ratioRZ), axis = 0).T).min(1)
+    elif axialdirection =="Z":
+        enveloperation = (np.stack((ratioFX,ratioFY,ratioFZ,ratioRX,ratioRY), axis = 0).T).min(1)
+
+# Converts the sine spec dataset to data over the frequency range - LINEAR INTERPOLATION
+def lininterpsinespec(freq,inputspec,direction):
+    import numpy as np
+    global sinecurve
+    if direction == "X":
+        sinecurve = np.stack((freq,np.interp(freq,inputspec[:,0],inputspec[:,1])), axis=0)
+    elif direction  == "Y":
+        sinecurve = np.stack((freq,np.interp(freq,inputspec[:,2],inputspec[:,3])), axis=0)
+    elif direction  == "Z":
+        sinecurve = np.stack((freq,np.interp(freq,inputspec[:,4],inputspec[:,5])), axis=0)
+
+# Function to write any array of 2 columns in csv format
+def csvwrite2darray(path,arrayX,arrayY,titleX:str,titleY:str):
+    import csv
+    import numpy as np
+    path = path[:-3] + "_nochedprofile.csv"
+    array = np.stack((arrayX,arrayY), axis = 1)
+    with open(str(path), "w", newline="") as f:
+    # creating the writer
+        writer = csv.writer(f)
+        writer.writerow([titleX,titleY])
+        for row in array:
+            writer.writerow([row[0],row[1]])
+
+# Detect what is the axial direction of the S/C. Returns X, Y or Z
+def detectaxial(Xcog,Ycog,Zcog):
+    global axialdirection
+    if Xcog > Ycog and Xcog > Zcog:
+        axialdirection = "X"
+    elif Ycog > Xcog and Ycog > Zcog:
+        axialdirection = "Y"
+    elif Zcog > Xcog and Zcog > Ycog:
+        axialdirection = "Z"
+
 
 # Temporary - Just for debug
 mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\FileManager.xlsx"
