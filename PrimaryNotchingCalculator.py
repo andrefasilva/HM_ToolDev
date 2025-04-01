@@ -265,7 +265,10 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
         ratioFX[ratioFX > 1] = 1
         ratioFY[ratioFY > 1] = 1
         ratioFZ[ratioFZ > 1] = 1
-        enveloperation = (np.stack((ratioFX,ratioFY,ratioFZ,), axis = 0).T).min(1)  
+        enveloperation = (np.stack((ratioFX,ratioFY,ratioFZ,), axis = 0).T).min(1) 
+
+        # Save notched profile as csv
+        csvwrite2darray(h5file,randomcurve[1],(enveloperation*randomcurve[1]), "Freq [Hz]", "Random " + subcase + " [g^2/Hz]")    
   
         # PLOTING CURVES
         fig, axs = plt.subplots(2, 3)
