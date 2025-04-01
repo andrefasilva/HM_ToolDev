@@ -31,16 +31,20 @@ def PrimaryNotchingCalculator(filemanager):
 
 
     # Notches the responses and plots each notched profile - RANDOM
-    if inputrandom != "":
-        # Gets the random loads into an array
-        getrandomlevels(inputrandom)
-        h5_notchrandom(inputh5x,randomspec)
-    elif inputsine !="":   
+    if inputsine !="":
         # Notches the responses and plots each notched profile - Sine
+        print("Performing Sine Notching")
         getsinelevels(inputsine)
         h5_notchsine(inputh5x, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "X")
         h5_notchsine(inputh5y, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Y")
         h5_notchsine(inputh5z, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Z")
+    if inputrandom != "": 
+        # Performs primarynotching on random level
+        print("Performing Random Notching")
+        getrandomlevels(inputrandom)
+        h5_notchrandom(inputrh5x,randomspec, "X")
+        h5_notchrandom(inputrh5y,randomspec, "Y")
+        h5_notchrandom(inputrh5z,randomspec, "Z")
     else:
         import sys
         sys.exit("No file specified with inputs for Random or Sine.")
@@ -59,7 +63,7 @@ def loadallpaths(pathcsv):
     import pandas as pd
 
     # Set variables as global
-    global inputf06, inputh5x, inputh5y, inputh5z, outpath, inputlevels, inputrandom, inputsine, analysis      
+    global inputf06, inputh5x, inputh5y, inputh5z, outpath, inputlevels, inputrandom, inputsine, analysis, inputrh5x, inputrh5y , inputrh5z    
         
     excelbook = pd.read_excel(pathcsv, usecols="B", keep_default_na= False)
     allfileslist = excelbook['File paths'].tolist()
@@ -70,16 +74,19 @@ def loadallpaths(pathcsv):
     inputh5z = allfileslist[3]
     inputlevels = allfileslist[4]
     inputsine = allfileslist[5]
-    inputrandom = allfileslist[6]
+    inputrh5x = allfileslist[6]
+    inputrh5y = allfileslist[7]
+    inputrh5z = allfileslist[8]
+    inputrandom = allfileslist[9]
 
     # Get output file paths
-    outpath = allfileslist[7]
+    outpath = allfileslist[10]
 
     if inputrandom == "":
         analysis = "sine"
     else:
         analysis = "random"
-    return inputf06, inputh5x, inputh5y, inputh5z, outpath, inputlevels, inputrandom, inputsine, analysis 
+    return inputf06, inputh5x, inputh5y, inputh5z, outpath, inputlevels, inputrandom, inputsine, analysis, inputrh5x, inputrh5y , inputrh5z     
 
 # Function to read the f06 file and extract the mass and COG
 def openf06(filepath):
@@ -208,7 +215,7 @@ def csvwriteloads(outputpath):
     return storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ
 
 # Function to read the h5 file data and process the SPCD forces wrt. notch limits
-def h5_notchrandom(h5file,randomspec):
+def h5_notchrandom(h5file,randomspec, subcase:str):
     import h5py
     import numpy as np
     import matplotlib.pyplot as plt    
@@ -216,10 +223,10 @@ def h5_notchrandom(h5file,randomspec):
     with h5py.File(h5file, "r") as f:
         # Retrieving the SPCD node
         SPCDgroup = f["NASTRAN/RESULT/NODAL/SPC_FORCE_CPLX"][()]
-        SPCDnode = SPCDgroup[0][1]
+        SPCDnode = SPCDgroup[0]["ID"]
 
         #Get frequency per domainID
-        DomainList = f["INDEX/NASTRAN/RESULT/NODAL/ACCELERATION_CPLX"]["DOMAIN_ID"]
+        DomainList = f["INDEX/NASTRAN/RESULT/NODAL/SPC_FORCE_CPLX"]["DOMAIN_ID"]
 
         #Get frequency per domainID
         Eigendata = np.array((f["NASTRAN/RESULT/DOMAINS"]["ID","TIME_FREQ_EIGR"]).tolist())
@@ -231,36 +238,92 @@ def h5_notchrandom(h5file,randomspec):
         MaskSPCD = np.isin(SPCFcplx[:,0],SPCDnode)
         MaskEigen = np.isin(Eigendata[:,0],DomainList)
 
+        # Retrieving the first frequency
+        ModalFreq = f["NASTRAN/RESULT/SUMMARY/EIGENVALUE"][()]
+        firstfreq = ModalFreq[0]["FREQ"]
+
         
-        SPCDaccel = np.stack((Eigendata[MaskEigen,1],SPCFcplx[MaskSPCD,0],SPCFcplx[MaskSPCD,1],SPCFcplx[MaskSPCD,2],SPCFcplx[MaskSPCD,3],
+        SPCDloads = np.stack((Eigendata[MaskEigen,1],SPCFcplx[MaskSPCD,0],SPCFcplx[MaskSPCD,1],SPCFcplx[MaskSPCD,2],SPCFcplx[MaskSPCD,3],
                     SPCFcplx[MaskSPCD,4],SPCFcplx[MaskSPCD,5],SPCFcplx[MaskSPCD,6]), axis=0)
         
-        # Interpolation of the random spec to "match" the analysis freq range
-        randomcurve = np.interp(SPCDaccel[0],randomspec[:,0],randomspec[:,1])
+        # Gets linear interpolated sine spec curve for each subcase
+        lininterprandomspec(SPCDloads[0],randomspec,subcase)
 
-        
+        # Gets the semiempirical limit load curve for random notching
+        SemiEmpiricalRandom(10,mass,firstfreq,randomcurve)
+        LimForceCurve = np.stack([randomcurve[0],LimForce], axis=0)
+
+        # Calculate the PSDout
+        repeat = randomcurve.T[:,1]
+        PSDin = np.stack([repeat, repeat, repeat, repeat, repeat, repeat], axis = 1)       
+        PSDout = (np.absolute(SPCDloads.T[:,2:8])**2)*PSDin*(9.81**2)
+        PSDout = PSDout.T
+
+        ratioFX = LimForceCurve[1]/PSDout[0]
+        ratioFY = LimForceCurve[1]/PSDout[1]
+        ratioFZ = LimForceCurve[1]/PSDout[2]
+        ratioFX[ratioFX > 1] = 1
+        ratioFY[ratioFY > 1] = 1
+        ratioFZ[ratioFZ > 1] = 1
+        enveloperation = (np.stack((ratioFX,ratioFY,ratioFZ,), axis = 0).T).min(1)  
+  
+        # PLOTING CURVES
         fig, axs = plt.subplots(2, 3)
-        axs[0, 0].plot(SPCDaccel[0], abs(SPCDaccel[2]))
-        axs[0, 0].plot(SPCDaccel[0], randomcurve)
-        axs[0, 0].plot(randomspec[:,0], randomspec[:,1])
-        axs[0, 0].set_title("SPC Force TX")
-        axs[0, 1].plot(SPCDaccel[0], abs(SPCDaccel[3]), 'tab:orange')
-        axs[0, 1].set_title("SPC Force TY")
-        axs[0, 2].plot(SPCDaccel[0], abs(SPCDaccel[4]), 'tab:green')
-        axs[0, 2].set_title("SPC Force TZ")
+        axs[0, 0].set_title("Random "+ subcase + " Notch profile")
+        axs[0, 0].set_ylabel("PSD [g^2/Hz]")
+        axs[0, 0].set_xlabel("Frequency [Hz]")       
+        axs[0, 0].plot(randomcurve[0], randomcurve[1], "r-", label = "Input Profile", linewidth=2)
+        axs[0, 0].legend(fontsize="7")
 
-        axs[1, 0].plot(SPCDaccel[0], abs(SPCDaccel[5]))
-        axs[1, 0].set_title("SPC Force RX")
-        axs[1, 1].plot(SPCDaccel[0], abs(SPCDaccel[6]), 'tab:orange')
-        axs[1, 1].set_title("SPC Force RY")
-        axs[1, 2].plot(SPCDaccel[0], abs(SPCDaccel[7]), 'tab:green')
-        axs[1, 2].set_title("SPC Force RZ")
+        axs[0, 1].set_title("Notch Ratios")
+        axs[0, 1].set_ylabel("-")
+        axs[0, 1].set_xlabel("Frequency [Hz]")       
+        axs[0, 1].plot(randomcurve[0], enveloperation, "k--", label = "Envelope of Ratios", linewidth=2)
+        axs[0, 1].legend(fontsize="7")
+
+        axs[0, 2].set_title("Notched Profile")
+        axs[0, 2].set_ylabel("PSD [g^2/Hz]")
+        axs[0, 2].set_xlabel("Frequency [Hz]")       
+        axs[0, 2].plot(SPCDloads[0], enveloperation*randomcurve[1], "r-", label = "Notched Profile", linewidth=2)
+        axs[0, 2].legend(fontsize="7")
+
+        axs[1, 0].set_title("FX")
+        axs[1, 0].set_ylabel("FSD [N^2/Hz]")
+        axs[1, 0].set_xlabel("Frequency [Hz]")       
+        axs[1, 0].plot(LimForceCurve[0], LimForceCurve[1], "k--", label = "Lim Force Profile", linewidth=1)
+        axs[1, 0].plot(SPCDloads[0], PSDout[0], "r--", label = "Unnotched FX", linewidth=1)
+        axs[1, 0].plot(SPCDloads[0], PSDout[0]*enveloperation, "r-", label = "NotchedFX", linewidth=2)
+        axs[1, 0].legend(fontsize="7")
+
+        axs[1, 1].set_title("FY")
+        axs[1, 1].set_ylabel("FSD [N^2/Hz]")
+        axs[1, 1].set_xlabel("Frequency [Hz]")       
+        axs[1, 1].plot(LimForceCurve[0], LimForceCurve[1], "k--", label = "Lim Force Profile", linewidth=1)
+        axs[1, 1].plot(SPCDloads[0], PSDout[1], "b--", label = "Unnotched FY", linewidth=1)
+        axs[1, 1].plot(SPCDloads[0], PSDout[1]*enveloperation, "b-", label = "NotchedFY", linewidth=2)
+        axs[1, 1].legend(fontsize="7")
+
+        axs[1, 2].set_title("FZ")
+        axs[1, 2].set_ylabel("FSD [N^2/Hz]")
+        axs[1, 2].set_xlabel("Frequency [Hz]")       
+        axs[1, 2].plot(LimForceCurve[0], LimForceCurve[1], "k--", label = "Lim Force Profile", linewidth=1)
+        axs[1, 2].plot(SPCDloads[0], PSDout[2], "g--", label = "Unnotched FZ", linewidth=1)
+        axs[1, 2].plot(SPCDloads[0], PSDout[2]*enveloperation, "g-", label = "NotchedFZ", linewidth=2)
+        axs[1, 2].legend(fontsize="7")
 
         for ax in fig.get_axes():
             ax.set_xscale("log")
             ax.set_yscale("log")
-        
+            ax.set_ylim(bottom=0)
+            ax.set_xlim(left=min(SPCDloads[0]))
+            ax.set_xlim(right=max(SPCDloads[0]))
+
+
+        fig.suptitle("Random "+ subcase + " Primary Notching",fontsize = 14)
+        fig.set_size_inches(20,11)
+        fig.tight_layout()        
         plt.show()
+        fig.savefig(h5file[:-3] + "_nochedprofile.png")       
 
 # Function to read the h5 file data and process the SPCD forces wrt. notch limits
 def h5_notchsine(h5file,inputsine, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ, CoGX, CoGY, CoGZ, subcase: str):
@@ -303,7 +366,7 @@ def h5_notchsine(h5file,inputsine, storeTX, storeTY, storeTZ, storeRX, storeRY, 
         # Gets notched profile by multiplying the notch ratios by the sine curve
         notchedprofile = enveloperation*sinecurve[1]
         # Save notched profile as csv
-        csvwrite2darray(h5file,SPCDloads[0],notchedprofile,"Freq [Hz]", "Sine X [g]")          
+        csvwrite2darray(h5file,SPCDloads[0],notchedprofile,"Freq [Hz]", "Sine " + subcase + " [g]")          
         
         # PLOTING CURVES
         fig, axs = plt.subplots(3, 3)
@@ -402,9 +465,13 @@ def getrandomlevels(filerandom):
 
     global randomspec
     randomspec = []        
-    listfreqs = (pd.read_csv(filerandom, delimiter=',', usecols=[0], keep_default_na= False).to_numpy().T)[0]
-    listlevels = (pd.read_csv(filerandom, usecols=[1], keep_default_na= False).to_numpy().T)[0]
-    randomspec = np.vstack([listfreqs,listlevels]).T
+    FreqX = (pd.read_csv(filerandom, delimiter=',', usecols=[0], keep_default_na= False).to_numpy().T)[0]
+    FreqY = (pd.read_csv(filerandom, delimiter=',', usecols=[2], keep_default_na= False).to_numpy().T)[0]
+    FreqZ = (pd.read_csv(filerandom, delimiter=',', usecols=[4], keep_default_na= False).to_numpy().T)[0]
+    LevelsX = (pd.read_csv(filerandom, usecols=[1], keep_default_na= False).to_numpy().T)[0]
+    LevelsY = (pd.read_csv(filerandom, usecols=[3], keep_default_na= False).to_numpy().T)[0]
+    LevelsZ = (pd.read_csv(filerandom, usecols=[5], keep_default_na= False).to_numpy().T)[0]
+    randomspec = np.vstack([FreqX,LevelsX,FreqY,LevelsY,FreqZ,LevelsZ]).T
 
 # Read the random input levels
 def getsinelevels(filesine):
@@ -489,6 +556,35 @@ def detectaxial(Xcog,Ycog,Zcog):
         axialdirection = "Y"
     elif Zcog > Xcog and Zcog > Ycog:
         axialdirection = "Z"
+
+# Converts the sine spec dataset to data over the frequency range - LINEAR INTERPOLATION
+def lininterprandomspec(freq,inputspec,direction):
+    import numpy as np
+    global randomcurve
+    if direction == "X":
+        randomcurve = np.stack((freq,np.interp(freq,inputspec[:,0],inputspec[:,1])), axis=0)
+    elif direction  == "Y":
+        randomcurve = np.stack((freq,np.interp(freq,inputspec[:,2],inputspec[:,3])), axis=0)
+    elif direction  == "Z":
+        randomcurve = np.stack((freq,np.interp(freq,inputspec[:,4],inputspec[:,5])), axis=0)
+
+# Calculates the semiempirical random limit force
+def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
+    import numpy as np
+    global LimForce
+    itemmass = float(itemmass)
+    LimForce = []
+    Trandomdata = np.transpose(randomdata)
+    id = 0
+    for rowrandom in Trandomdata[:,0]:
+        if rowrandom < f0:
+            Force = C*(itemmass**2)*Trandomdata[id,1]*(9.81**2)  
+        elif rowrandom >= f0:
+            Force = C*(itemmass**2)*Trandomdata[id,1]*((f0/rowrandom)**2)*(9.81**2)
+        id=id+1                    
+        LimForce.append(Force)
+
+
 
 
 # Temporary - Just for debug
