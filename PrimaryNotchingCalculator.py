@@ -276,19 +276,19 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
         axs[0, 0].set_ylabel("PSD [g^2/Hz]")
         axs[0, 0].set_xlabel("Frequency [Hz]")       
         axs[0, 0].plot(randomcurve[0], randomcurve[1], "r-", label = "Input Profile", linewidth=2)
-        axs[0, 0].legend(fontsize="7")
+        axs[0, 0].legend(fontsize="8")
 
         axs[0, 1].set_title("Notch Ratios")
         axs[0, 1].set_ylabel("-")
         axs[0, 1].set_xlabel("Frequency [Hz]")       
         axs[0, 1].plot(randomcurve[0], enveloperation, "k--", label = "Envelope of Ratios", linewidth=2)
-        axs[0, 1].legend(fontsize="7")
+        axs[0, 1].legend(fontsize="8")
 
         axs[0, 2].set_title("Notched Profile")
         axs[0, 2].set_ylabel("PSD [g^2/Hz]")
         axs[0, 2].set_xlabel("Frequency [Hz]")       
         axs[0, 2].plot(SPCDloads[0], enveloperation*randomcurve[1], "r-", label = "Notched Profile", linewidth=2)
-        axs[0, 2].legend(fontsize="7")
+        axs[0, 2].legend(fontsize="8")
 
         axs[1, 0].set_title("FX")
         axs[1, 0].set_ylabel("FSD [N^2/Hz]")
@@ -296,7 +296,7 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
         axs[1, 0].plot(LimForceCurve[0], LimForceCurve[1], "k--", label = "Lim Force Profile", linewidth=1)
         axs[1, 0].plot(SPCDloads[0], PSDout[0], "r--", label = "Unnotched FX", linewidth=1)
         axs[1, 0].plot(SPCDloads[0], PSDout[0]*enveloperation, "r-", label = "NotchedFX", linewidth=2)
-        axs[1, 0].legend(fontsize="7")
+        axs[1, 0].legend(fontsize="8")
 
         axs[1, 1].set_title("FY")
         axs[1, 1].set_ylabel("FSD [N^2/Hz]")
@@ -304,7 +304,7 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
         axs[1, 1].plot(LimForceCurve[0], LimForceCurve[1], "k--", label = "Lim Force Profile", linewidth=1)
         axs[1, 1].plot(SPCDloads[0], PSDout[1], "b--", label = "Unnotched FY", linewidth=1)
         axs[1, 1].plot(SPCDloads[0], PSDout[1]*enveloperation, "b-", label = "NotchedFY", linewidth=2)
-        axs[1, 1].legend(fontsize="7")
+        axs[1, 1].legend(fontsize="8")
 
         axs[1, 2].set_title("FZ")
         axs[1, 2].set_ylabel("FSD [N^2/Hz]")
@@ -312,7 +312,7 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
         axs[1, 2].plot(LimForceCurve[0], LimForceCurve[1], "k--", label = "Lim Force Profile", linewidth=1)
         axs[1, 2].plot(SPCDloads[0], PSDout[2], "g--", label = "Unnotched FZ", linewidth=1)
         axs[1, 2].plot(SPCDloads[0], PSDout[2]*enveloperation, "g-", label = "NotchedFZ", linewidth=2)
-        axs[1, 2].legend(fontsize="7")
+        axs[1, 2].legend(fontsize="8")
 
         for ax in fig.get_axes():
             ax.set_xscale("log")
