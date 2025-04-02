@@ -38,14 +38,14 @@ def PrimaryNotchingCalculator(filemanager):
         h5_notchsine(inputh5x, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "X")
         h5_notchsine(inputh5y, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Y")
         h5_notchsine(inputh5z, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Z")
-    elif inputrandom != "": 
+    if inputrandom != "": 
         # Performs primarynotching on random level
         print("Performing Random Notching")
         getrandomlevels(inputrandom)
         h5_notchrandom(inputrh5x,randomspec, "X")
         h5_notchrandom(inputrh5y,randomspec, "Y")
         h5_notchrandom(inputrh5z,randomspec, "Z")
-    else:
+    elif inputrandom == "" and inputsine == "":
         import sys
         sys.exit("No file specified with inputs for Random or Sine.")
         
