@@ -38,7 +38,7 @@ def PrimaryNotchingCalculator(filemanager):
         h5_notchsine(inputh5x, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "X")
         h5_notchsine(inputh5y, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Y")
         h5_notchsine(inputh5z, sinespec, storeTX, storeTY, storeTZ, storeRX, storeRY, storeRZ,xcog, ycog, zcog, "Z")
-    if inputrandom != "": 
+    elif inputrandom != "": 
         # Performs primarynotching on random level
         print("Performing Random Notching")
         getrandomlevels(inputrandom)
@@ -286,7 +286,8 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
 
         axs[0, 2].set_title("Notched Profile")
         axs[0, 2].set_ylabel("PSD [g^2/Hz]")
-        axs[0, 2].set_xlabel("Frequency [Hz]")       
+        axs[0, 2].set_xlabel("Frequency [Hz]")
+        axs[0, 2].plot(randomcurve[0], randomcurve[1], "k--", label = "Unnotched Profile", linewidth=1.5)       
         axs[0, 2].plot(SPCDloads[0], enveloperation*randomcurve[1], "r-", label = "Notched Profile", linewidth=2)
         axs[0, 2].legend(fontsize="8")
 
@@ -317,7 +318,6 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
         for ax in fig.get_axes():
             ax.set_xscale("log")
             ax.set_yscale("log")
-            ax.set_ylim(bottom=0)
             ax.set_xlim(left=min(SPCDloads[0]))
             ax.set_xlim(right=max(SPCDloads[0]))
 
@@ -591,5 +591,5 @@ def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
 
 
 # Temporary - Just for debug
-mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\FileManager.xlsx"
-PrimaryNotchingCalculator(mainfile)
+#mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\FileManager.xlsx"
+#PrimaryNotchingCalculator(mainfile)
