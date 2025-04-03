@@ -1,11 +1,12 @@
-import tkinter
-import tkinter.messagebox
+import tkinter as tk
+from tkinter import *
 import customtkinter
 import PrimaryNotchingCalculator as PNC
 import pandas as pd
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
 
 
 class WindowSettings(customtkinter.CTkFrame):
@@ -291,6 +292,11 @@ class RunsFrame(customtkinter.CTkFrame,):
             global DBpath
             DBpath = customtkinter.filedialog.asksaveasfilename(title="Select directory for saving Database", filetypes=[("Excel file", ".xlsx")])
 
+            if ".xlsx" in DBpath:
+                DBpath = DBpath
+            else:
+                DBpath = DBpath + ".xlsx"
+
             f06path = (FilesFrame.f06path).replace("/", '\\')
             sinexh5path= (FilesFrame.sinexh5path).replace("/", '\\')
             sineyh5path = (FilesFrame.sineyh5path).replace("/", '\\')
@@ -343,12 +349,20 @@ def writeDB(path,f06,SXh5,SYh5,SZh5,QScsv,Sinecsv,RXh5,RYh5,RZh5,RNDcsv,output):
 
 class App(customtkinter.CTk):
     def __init__(self):
-        super().__init__()
-
+        
+        super().__init__()       
         # configure window
+        
         self.title("Sine and Random Primary Notching")
         self.geometry(f"{680}x{600}")
         self.after(10, self.eval, f'tk::PlaceWindow {self} center')
+
+        #import os
+        #from PIL import ImageTk
+        #self.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","C:/Users/a.silva/OneDrive - Swissto12/Desktop/ToolDev/HM_ToolDev/iconST12.png"))
+        #self.wm_iconbitmap()
+        #self.iconphoto(False, self.iconpath)
+     
 
         self.FilesFrame = FilesFrame(self)
         self.FilesFrame.grid(row=0, column=0, padx=10, pady=(20, 0), sticky="n")
@@ -358,9 +372,11 @@ class App(customtkinter.CTk):
 
 
         self.WindowSettingsFrame = WindowSettings(self)
-        self.WindowSettingsFrame.grid(row=2, column=0, padx=20, pady=(15, 15), sticky="s")       
+        self.WindowSettingsFrame.grid(row=2, column=0, padx=20, pady=(15, 15), sticky="s")
+
 
 
 if __name__ == "__main__":
     App().mainloop()
-
+# FOR COMPILING .EXE
+# pyinstaller.exe --icon=./iconST12.png -F --onefile --noconsole  PrimaryNotchingGUI.py

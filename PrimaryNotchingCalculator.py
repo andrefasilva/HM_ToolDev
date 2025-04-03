@@ -369,97 +369,14 @@ def h5_notchsine(h5file,inputsine, storeTX, storeTY, storeTZ, storeRX, storeRY, 
         # Gets notched profile by multiplying the notch ratios by the sine curve
         notchedprofile = enveloperation*sinecurve[1]
         # Save notched profile as csv
-        csvwrite2darray(h5file,SPCDloads[0],notchedprofile,"Freq [Hz]", "Sine " + subcase + " [g]")          
-        
-        # PLOTING CURVES
-        fig, axs = plt.subplots(3, 3)
-        axs[0, 0].set_title("Notch profile")
-        axs[0, 0].set_ylabel("Acceleration [g]")
-        axs[0, 0].set_xlabel("Frequency [Hz]")       
-        axs[0, 0].plot(SPCDloads[0], sinecurve[1], "k--", label = "Input Profile", linewidth=2)
-        axs[0, 0].plot(SPCDloads[0], notchedprofile, label = "Notched Profile")
-        axs[0, 0].legend(fontsize="7")
-        
-        axs[0, 1].set_title("Notch triggers")
-        axs[0, 1].set_ylabel("-")
-        axs[0, 1].set_xlabel("Frequency [Hz]")         
-        axs[0, 1].plot(SPCDloads[0], enveloperation, 'k:', label = "Envelope ratios", linewidth=2)
-        axs[0, 1].plot(SPCDloads[0], ratioFX, label = "Ratio FX")
-        axs[0, 1].plot(SPCDloads[0], ratioFY, label = "Ratio FY")
-        axs[0, 1].plot(SPCDloads[0], ratioFZ, label = "Ratio FZ")
-        if axialdirection != "X": 
-            axs[0, 1].plot(SPCDloads[0], ratioRX, label = "Ratio MX")
-        if axialdirection != "Y":
-            axs[0, 1].plot(SPCDloads[0], ratioRY, label = "Ratio MY")
-        if axialdirection != "Z":
-            axs[0, 1].plot(SPCDloads[0], ratioRZ, label = "Ratio MZ")
-        axs[0, 1].legend(fontsize="7")
+        csvwrite2darray(h5file,SPCDloads[0],notchedprofile,"Freq [Hz]", "Sine " + subcase + " [g]") 
 
-        axs[0, 2].set_title("FX")
-        axs[0, 2].set_ylabel("Force [N]")
-        axs[0, 2].set_xlabel("Frequency [Hz]")          
-        axs[0, 2].plot(limitFX[0], limitFX[1], 'r', label = "Limit FX")
-        axs[0, 2].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[2]*9.81), label = "Notched FX", linewidth=2)
-        axs[0, 2].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[2]*9.81),  'g--', label = "Unnotched FX")     
-        axs[0, 2].legend(fontsize="7")
+        # Ploting with Plotly
+        import plotly.express as px
 
-        axs[1, 0].set_title("FY")
-        axs[1, 0].set_ylabel("Force [N]")
-        axs[1, 0].set_xlabel("Frequency [Hz]")         
-        axs[1, 0].plot(limitFY[0], limitFY[1], 'r', label = "Limit FY")
-        axs[1, 0].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[3]*9.81), label = "Notched FY", linewidth=2)
-        axs[1, 0].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[3]*9.81),  'g--', label = "Unnotched FY")       
-        axs[1, 0].legend(fontsize="7")
+        fig = px.line(x= SPCDloads[0], y= sinecurve[1], title = "Unnotched Profile")           
+        fig.show()
 
-        axs[1, 1].set_title("FZ")
-        axs[1, 1].set_ylabel("Force [N]")
-        axs[1, 1].set_xlabel("Frequency [Hz]")         
-        axs[1, 1].plot(limitFZ[0], limitFZ[1], 'r', label = "Limit FZ")
-        axs[1, 1].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[4]*9.81), label = "Notched FZ", linewidth=2)
-        axs[1, 1].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[4]*9.81),  'g--', label = "Unnotched FZ")        
-        axs[1, 1].legend(fontsize="7")
-
-        axs[1, 2].set_title("MX")
-        axs[1, 2].set_ylabel("Moment [N.m]")
-        axs[1, 2].set_xlabel("Frequency [Hz]")         
-        axs[1, 2].plot(limitRX[0], limitRX[1], 'r', label = "Limit MX")
-        axs[1, 2].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[5]*9.81), label = "Notched MX", linewidth=2)
-        axs[1, 2].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[5]*9.81),  'g--', label = "Unnotched MX")        
-        axs[1, 2].legend(fontsize="7")
-
-        axs[2, 0].set_title("MY")
-        axs[2, 0].set_ylabel("Moment [N.m]")
-        axs[2, 0].set_xlabel("Frequency [Hz]")         
-        axs[2, 0].plot(limitRY[0], limitRY[1], 'r', label = "Limit MY")
-        axs[2, 0].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[6]*9.81), label = "Notched MY", linewidth=2)
-        axs[2, 0].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[6]*9.81),  'g--', label = "Unnotched MY")      
-        axs[2, 0].legend(fontsize="7")
-
-        axs[2, 1].set_title("MZ")
-        axs[2, 1].set_ylabel("Moment [N.m]")
-        axs[2, 1].set_xlabel("Frequency [Hz]")          
-        axs[2, 1].plot(limitRZ[0], limitRZ[1], 'r', label = "Limit MZ")
-        axs[2, 1].plot(SPCDloads[0], np.absolute(notchedprofile*SPCDloads[7]*9.81), label = "Notched MZ", linewidth=2)
-        axs[2, 1].plot(SPCDloads[0], np.absolute(sinecurve[1]*SPCDloads[7]*9.81),  'g--', label = "Unnotched MZ")      
-        axs[2, 1].legend(fontsize="7")
-
-
-
-        for ax in fig.get_axes():
-            ax.set_xscale("linear")
-            ax.set_yscale("linear")
-            ax.set_ylim(bottom=0)
-            ax.set_xlim(left=min(SPCDloads[0]))
-            ax.set_xlim(right=max(SPCDloads[0]))
-            ax.set_xticks(np.arange(min(SPCDloads[0]), max(SPCDloads[0]), 10.0))
-
-
-        fig.suptitle("Sine "+ subcase + " Primary Notching",fontsize = 14)
-        fig.delaxes(axs[2,2])
-        fig.set_size_inches(20,11)
-        fig.tight_layout()        
-        plt.show()        
-        fig.savefig(h5file[:-3] + "_nochedprofile.png")
 
 # Read the random input levels
 def getrandomlevels(filerandom):
@@ -591,5 +508,5 @@ def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
 
 
 # Temporary - Just for debug
-#mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\FileManager.xlsx"
-#PrimaryNotchingCalculator(mainfile)
+mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\GUIdatabase.xlsx"
+PrimaryNotchingCalculator(mainfile)
