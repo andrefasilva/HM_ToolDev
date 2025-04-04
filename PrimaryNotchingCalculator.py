@@ -598,6 +598,6 @@ def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
 
 
 # Temporary - Just for debug
-mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\GUIdatabase.xlsx"
+#•mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\GUIdatabase.xlsx"
 #mainfile = r"N:\IS45_Tank\20_ANALYSIS\GUIdatabase.xlsx"
-PrimaryNotchingCalculator(mainfile)
+#PrimaryNotchingCalculator(mainfile)

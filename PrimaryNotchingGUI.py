@@ -280,10 +280,12 @@ class RunsFrame(customtkinter.CTkFrame,):
 
             import pathlib
             DBpath = pathlib.Path(outputpath)
-            DBpath = (str(DBpath.parent)+"/GUIdatabase.xlsx").replace("/", '\\')
+            DBpath = (str(DBpath.parent)+"/GUIdatabase.xlsx").replace("/", '\\')      
 
-                 
             writeDB(DBpath ,f06path,sinexh5path,sineyh5path,sinezh5path,QScsvpath,SINEcsvpath,rndxh5path,rndyh5path,rndzh5path,RNDcsvpath,outputpath)
+
+            import win32con, win32api            
+            win32api.SetFileAttributes(DBpath,win32con.FILE_ATTRIBUTE_HIDDEN)
 
             PNC.PrimaryNotchingCalculator(DBpath)        
 
