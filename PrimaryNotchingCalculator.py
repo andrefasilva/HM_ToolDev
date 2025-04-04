@@ -584,10 +584,6 @@ def loginterprandomspec(freq,inputspec,direction):
                     y1 = oldy[i+1]
 
             newy =m.exp(m.log(y0) + ((m.log(x/x0))*((m.log(y1/y0)/m.log(x1/x0)))))
-            if x == 20:
-                print(x)
-                print(x0)
-                print(m.log(x/x0))
             newyvalues.append(newy)
 
         newyvalues = np.array(newyvalues)
@@ -620,7 +616,7 @@ def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
 
 
 
-# Temporary - Just for debug
+# Temporary - Just for debugging
 #mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\GUIdatabase.xlsx"
 #mainfile = r"N:\IS45_Tank\20_ANALYSIS\GUIdatabase.xlsx"
 #PrimaryNotchingCalculator(mainfile)
