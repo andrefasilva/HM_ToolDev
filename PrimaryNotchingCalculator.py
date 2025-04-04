@@ -252,7 +252,7 @@ def h5_notchrandom(h5file,randomspec, subcase:str):
                     SPCFcplx[MaskSPCD,4],SPCFcplx[MaskSPCD,5],SPCFcplx[MaskSPCD,6]), axis=0)
         
         # Gets linear interpolated sine spec curve for each subcase
-        lininterprandomspec(SPCDloads[0],randomspec,subcase)
+        loginterprandomspec(SPCDloads[0],randomspec,subcase)
 
         # Gets the semiempirical limit load curve for random notching
         SemiEmpiricalRandom(10,mass,firstfreq,randomcurve)
@@ -568,15 +568,38 @@ def detectaxial(Xcog,Ycog,Zcog):
         axialdirection = "Z"
 
 # Converts the sine spec dataset to data over the frequency range - LINEAR INTERPOLATION
-def lininterprandomspec(freq,inputspec,direction):
+def loginterprandomspec(freq,inputspec,direction):
     import numpy as np
+    import math as m
     global randomcurve
+
+    def loginterp(newx, oldx, oldy):
+        newyvalues = []
+        for x in newx:
+            for i in range(len(oldx)-1):                               
+                if x >= oldx[i] and x <= oldx[i+1]:                  
+                    x0 = oldx[i]
+                    x1 = oldx[i+1]
+                    y0 = oldy[i]
+                    y1 = oldy[i+1]
+
+            newy =m.exp(m.log(y0) + ((m.log(x/x0))*((m.log(y1/y0)/m.log(x1/x0)))))
+            if x == 20:
+                print(x)
+                print(x0)
+                print(m.log(x/x0))
+            newyvalues.append(newy)
+
+        newyvalues = np.array(newyvalues)
+        return newyvalues                             
+
+
     if direction == "X":
-        randomcurve = np.stack((freq,np.interp(freq,inputspec[:,0],inputspec[:,1])), axis=0)
+        randomcurve = np.stack((freq,loginterp(freq,inputspec[:,0],inputspec[:,1])), axis=0)
     elif direction  == "Y":
-        randomcurve = np.stack((freq,np.interp(freq,inputspec[:,2],inputspec[:,3])), axis=0)
+        randomcurve = np.stack((freq,loginterp(freq,inputspec[:,2],inputspec[:,3])), axis=0)
     elif direction  == "Z":
-        randomcurve = np.stack((freq,np.interp(freq,inputspec[:,4],inputspec[:,5])), axis=0)
+        randomcurve = np.stack((freq,loginterp(freq,inputspec[:,4],inputspec[:,5])), axis=0)
 
 # Calculates the semiempirical random limit force
 def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
@@ -598,6 +621,6 @@ def SemiEmpiricalRandom(C,itemmass,f0,randomdata):
 
 
 # Temporary - Just for debug
-#•mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\GUIdatabase.xlsx"
+#mainfile = r"N:\YODA_I8\20_ANALYSIS\10_SINE\GUIdatabase.xlsx"
 #mainfile = r"N:\IS45_Tank\20_ANALYSIS\GUIdatabase.xlsx"
 #PrimaryNotchingCalculator(mainfile)
